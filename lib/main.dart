@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'landing_page.dart';
+import 'search_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -88,6 +89,18 @@ class _HomePageState extends State<HomePage> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: TextField(
+                                  readOnly: true,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      PageRouteBuilder(
+                                        pageBuilder: (context, animation, secondaryAnimation) => const SearchPage(),
+                                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                          return FadeTransition(opacity: animation, child: child);
+                                        },
+                                      ),
+                                    );
+                                  },
                                   decoration: InputDecoration(
                                     hintText: 'Apa yang Anda cari?',
                                     hintStyle: GoogleFonts.inter(
@@ -119,6 +132,12 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(width: 16),
                       const Icon(
                         Icons.shopping_basket_outlined,
+                        color: Color(0xFF74070E),
+                        size: 28,
+                      ),
+                      const SizedBox(width: 12),
+                      const Icon(
+                        Icons.chat_outlined,
                         color: Color(0xFF74070E),
                         size: 28,
                       ),
