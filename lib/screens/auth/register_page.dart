@@ -1,39 +1,88 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'main.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../core/api_config.dart';
+import '../../screens/auth/login_page.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
+  bool _isPasswordVisible = false;
+  bool _isRegisterPressed = false;
+  AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
+
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  bool _isPasswordVisible = false;
-  bool _isLoginPressed = false;
-  AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
-
   @override
   void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _onLogin() {
+  bool _isLoading = false;
+
+  Future<void> _onRegister() async {
     setState(() {
       _autovalidateMode = AutovalidateMode.onUserInteraction;
     });
     if (_formKey.currentState!.validate()) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-      );
+      setState(() => _isLoading = true);
+      try {
+        final response = await http.post(
+          Uri.parse('${ApiConfig.baseUrl}/register'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: jsonEncode({
+            'full_name': _nameController.text,
+            'email': _emailController.text,
+            'password': _passwordController.text,
+            'phone_number': _phoneController.text,
+          }),
+        );
+
+        if (response.statusCode == 201) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Registrasi berhasil! Silakan login.'),
+            ),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+          );
+        } else {
+          final data = jsonDecode(response.body);
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(data['message'] ?? 'Registrasi gagal')),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Koneksi bermasalah: $e')));
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
     }
   }
 
@@ -53,17 +102,16 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const SizedBox(height: 20),
                   // Illustration Image
-                  // Pastikan Anda menyimpan gambar dengan nama login_illustration.png di folder assets/images/
                   Center(
                     child: Image.asset(
-                      'assets/images/login_illustration.jpg',
-                      width: 360,
-                      height: 360,
+                      'assets/images/register_illustration.jpg',
+                      width: 268,
+                      height: 265,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
-                          width: 360,
-                          height: 360,
+                          width: 268,
+                          height: 265,
                           decoration: BoxDecoration(
                             color: Colors.grey[100],
                             borderRadius: BorderRadius.circular(20),
@@ -79,7 +127,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               const SizedBox(height: 10),
                               Text(
-                                'Letakkan gambar di\nassets/images/login_illustration.png',
+                                'Letakkan gambar di\nassets/images/register_illustration.png',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(color: Colors.grey[500]),
                               ),
@@ -93,9 +141,9 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Title
                   Text(
-                    'Login',
+                    'Registrasi',
                     style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w600, // Semi Bold
+                      fontWeight: FontWeight.w600,
                       fontSize: 48,
                       color: const Color(0xFF000000),
                     ),
@@ -104,20 +152,45 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Subtitle
                   Text(
-                    'Lakukan login untuk melanjutkan.',
+                    'Lakukan registrasi untuk login.',
                     style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w400, // Regular
+                      fontWeight: FontWeight.w400,
                       fontSize: 14,
                       color: const Color(0xFF000000),
                     ),
                   ),
                   const SizedBox(height: 32),
 
-                  // Email Label
+                  // Name Field
+                  _buildLabel('Nama'),
+                  const SizedBox(height: 8),
+                  _buildInputField(
+                    controller: _nameController,
+                    hintText: 'Masukkan nama Anda',
+                    icon: Icons.person_outline,
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Nama wajib diisi'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Phone Field
+                  _buildLabel('Nomor telepon'),
+                  const SizedBox(height: 8),
+                  _buildInputField(
+                    controller: _phoneController,
+                    hintText: 'Masukkan nomor telepon Anda',
+                    icon: Icons.phone_outlined,
+                    keyboardType: TextInputType.phone,
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Nomor telepon wajib diisi'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Email Field
                   _buildLabel('Alamat email'),
                   const SizedBox(height: 8),
-
-                  // Email Input
                   _buildInputField(
                     controller: _emailController,
                     hintText: 'Masukkan alamat email Anda',
@@ -127,55 +200,97 @@ class _LoginPageState extends State<LoginPage> {
                       if (value == null || value.isEmpty) {
                         return 'Alamat email wajib diisi';
                       }
-                      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                      final emailRegex = RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      );
                       if (!emailRegex.hasMatch(value)) {
                         return 'Format email tidak valid';
                       }
                       return null;
                     },
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
-                  // Password Label
-                  _buildLabel('Kata Sandi'),
+                  // Password Field
+                  _buildLabel('Kata sandi'),
                   const SizedBox(height: 8),
-
-                  // Password Input
                   _buildPasswordField(),
                   const SizedBox(height: 48),
 
-                  // Login Button
+                  // Register Button
                   GestureDetector(
-                    onTapDown: (_) => setState(() => _isLoginPressed = true),
-                    onTapUp: (_) => setState(() => _isLoginPressed = false),
-                    onTapCancel: () => setState(() => _isLoginPressed = false),
-                    onTap: _onLogin,
+                    onTapDown: (_) => setState(() => _isRegisterPressed = true),
+                    onTapUp: (_) => setState(() => _isRegisterPressed = false),
+                    onTapCancel: () =>
+                        setState(() => _isRegisterPressed = false),
+                    onTap: _onRegister,
                     child: AnimatedContainer(
-                      duration: const Duration(
-                        milliseconds: 1000,
-                      ), // Smart animate durasi 1000ms
-                      curve: Curves.easeInOut,
+                      duration: const Duration(milliseconds: 200),
                       width: double.infinity,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: _isLoginPressed
+                        color: _isRegisterPressed
                             ? const Color(0xFFAAAAAA)
                             : const Color(0xFFFFFFFF),
                         border: Border.all(color: const Color(0xFFAAAAAA)),
-                        borderRadius: BorderRadius.circular(25), // Pill shape
+                        borderRadius: BorderRadius.circular(25),
                       ),
                       alignment: Alignment.center,
-                      child: Text(
-                        'Login',
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.black,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : Text(
+                              'Daftar',
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                color: const Color(0xFF000000),
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Login Link
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Sudah punya akun? ',
                         style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w700, // Bold
-                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          fontSize: 14,
                           color: const Color(0xFF000000),
                         ),
                       ),
-                    ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginPage(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Login di sini',
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: const Color(0xFF74070E),
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 40), // Padding bawah
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -189,7 +304,7 @@ class _LoginPageState extends State<LoginPage> {
     return Text(
       text,
       style: GoogleFonts.inter(
-        fontWeight: FontWeight.w400, // Regular
+        fontWeight: FontWeight.w400,
         fontSize: 14,
         color: const Color(0xFF000000),
       ),

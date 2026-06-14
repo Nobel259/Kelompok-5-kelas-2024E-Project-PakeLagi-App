@@ -55,6 +55,3 @@ If you are working with friends:
 2. Commit your changes: `git commit -m 'Menambahkan fitur XYZ'`.
 3. Push to the branch: `git push origin feature/nama-fitur`.
 4. Open a Pull Request.
-
----
-Made with ❤️ by Nobel & Friends

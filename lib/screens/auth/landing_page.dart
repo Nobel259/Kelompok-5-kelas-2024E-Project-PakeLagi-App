@@ -1,8 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'login_page.dart';
-import 'register_page.dart';
+import '../../screens/auth/login_page.dart';
+import '../../screens/auth/register_page.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -152,7 +152,9 @@ class _LandingPageState extends State<LandingPage> {
                       const TextSpan(text: 'Sudah punya akun? '),
                       TextSpan(
                         text: 'Login',
-                        style: const TextStyle(decoration: TextDecoration.underline),
+                        style: const TextStyle(
+                          decoration: TextDecoration.underline,
+                        ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
                             Navigator.push(
